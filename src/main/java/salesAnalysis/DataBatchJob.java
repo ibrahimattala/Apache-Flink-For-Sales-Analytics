@@ -54,6 +54,17 @@ public class DataBatchJob {
                 .returns(TypeInformation.of(new TypeHint<Tuple6<String, String, Float, Integer, Float, String>>() {
                 }));
 
+
+        // group by category to get the total sales and count
+        DataSet<CategorySalesDTO> categorySales = joined
+                .map((MapFunction<Tuple6<String, String, Float, Integer, Float, String>, CategorySalesDTO>) record
+                        -> new CategorySalesDTO(record.f5, record.f4, 1))
+                .returns(CategorySalesDTO.class)
+                .groupBy("category")
+                .reduce((ReduceFunction<CategorySalesDTO>) (value1, value2) ->
+                        new CategorySalesDTO(value1.getCategory(), value1.getTotalSales() + value2.getTotalSales(),
+                                value1.getCount() + value2.getCount()));
+
         // Execute program, beginning computation.
         env.execute("Sales Analysis");
     }
